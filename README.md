@@ -25,9 +25,11 @@ Tests: [Vitest](https://vitest.dev/), with upstream HTTP calls mocked via [msw](
 
 ### Web (`web/`)
 
-Next.js App Router, TypeScript, [shadcn/ui](https://ui.shadcn.com/) (Tailwind + Radix) as the design system — chosen for the best visual quality at the lowest development cost, and because it fits Server Components/Next's fetch caching cleanly. Testing: Vitest + React Testing Library (unit) and Playwright (real browser flows).
+Next.js App Router, TypeScript, [shadcn/ui](https://ui.shadcn.com/) (Tailwind + Base UI, this project's flavor of shadcn — its `Button` composes via a `render` prop rather than Radix's `asChild`) as the design system — chosen for the best visual quality at the lowest development cost, and because it fits Server Components/Next's fetch caching cleanly. Testing: Vitest + React Testing Library (unit) and Playwright (real browser flows).
 
 > This project runs on Next.js 16, which changed some App Router APIs since earlier versions (`params`/`searchParams` are now Promises, `fetch()` is not cached by default, etc.) — see inline comments in the code where these matter.
+
+The episode list screen (`/`) is an async Server Component that fetches `GET /episodes` from the backend with `next: { revalidate: 3600 }`. Search and pagination state live entirely in the URL (`?search=&page=`) via a plain server-rendered GET `<form>` and `Link`-based pagination controls — no client-side JavaScript is needed to keep that state, which is also the mechanism that will let back-navigation preserve list state once the detail screen exists. Requires `BACKEND_API_URL` (see below).
 
 ### App (`app/`)
 
@@ -87,6 +89,7 @@ npm run dev             # http://localhost:3001
 ```bash
 cd web
 npm install
+cp .env.example .env   # BACKEND_API_URL defaults to http://localhost:3001 — start the backend first
 npm run dev              # http://localhost:3000
 ```
 
@@ -103,7 +106,7 @@ flutter run               # pick a connected device/emulator
 | Sub-project | Automated                          | Real consumption                                          |
 | ----------- | ----------------------------------- | ----------------------------------------------------------- |
 | `backend`   | `npm test` (Vitest, unit + integration) | Start `npm run dev`, hit endpoints with real HTTP requests against the live Rick and Morty API. |
-| `web`       | `npm test` (Vitest + Testing Library)   | `npm run build && npm run test:e2e` (Playwright, drives a real Chromium browser). |
+| `web`       | `npm test` (Vitest + Testing Library)   | `npm run build && npm run test:e2e` — Playwright's `webServer` boots both the real backend and the web app, so these tests exercise the full stack (web → backend → the live Rick and Morty API) in a real Chromium browser, not mocks. |
 | `app`       | `flutter test` (widget/unit)             | `flutter test integration_test` on a real emulator/device. |
 
 ## Gitflow
