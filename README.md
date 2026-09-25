@@ -60,8 +60,8 @@ Testing: `flutter test` (widget/unit) and `integration_test` (drives the real ap
 {
   "episodes": [{ "id": 1, "name": "Pilot", "airDate": "December 2, 2013", "episodeCode": "S01E01" }],
   "page": 1,
-  "totalPages": 42,
-  "totalCount": 826,
+  "totalPages": 3,
+  "totalCount": 51,
   "hasNext": true,
   "hasPrevious": false
 }
