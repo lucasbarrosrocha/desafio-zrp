@@ -67,7 +67,7 @@ describe("EpisodeDetailPage", () => {
     expect(screen.getByText("No characters found for this episode.")).toBeInTheDocument();
   });
 
-  it("renders a disabled 'View details' button per character (no modal yet)", async () => {
+  it("renders a 'View details' button per character", async () => {
     getEpisodeDetail.mockResolvedValue(
       episodeDetail({
         characters: [{ id: 1, name: "Rick Sanchez", image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg" }],
@@ -80,7 +80,7 @@ describe("EpisodeDetailPage", () => {
     });
     render(ui);
 
-    expect(screen.getByRole("button", { name: "View details" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "View details" })).toBeEnabled();
   });
 
   it("links back to the list, preserving search and page from the URL", async () => {
