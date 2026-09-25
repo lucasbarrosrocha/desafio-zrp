@@ -166,3 +166,122 @@ describe("GET /episodes", () => {
     await app.close();
   });
 });
+
+function episodeDetailResponse() {
+  return {
+    id: 1,
+    name: "Pilot",
+    air_date: "December 2, 2013",
+    episode: "S01E01",
+    characters: [
+      "https://rickandmortyapi.com/api/character/1",
+      "https://rickandmortyapi.com/api/character/2",
+    ],
+  };
+}
+
+function character(id: number, name: string) {
+  return { id, name, image: `https://rickandmortyapi.com/api/character/avatar/${id}.jpeg` };
+}
+
+describe("GET /episodes/:id", () => {
+  it("returns the episode with its characters sorted by name", async () => {
+    upstreamServer.use(
+      http.get(`${UPSTREAM_URL}/episode/1`, () => HttpResponse.json(episodeDetailResponse())),
+      http.get(`${UPSTREAM_URL}/character/1,2`, () =>
+        HttpResponse.json([character(2, "Summer Smith"), character(1, "Morty Smith")]),
+      ),
+    );
+    const app = await buildServer(testEnv);
+
+    const response = await app.inject({ method: "GET", url: "/episodes/1" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      id: 1,
+      name: "Pilot",
+      airDate: "December 2, 2013",
+      episodeCode: "S01E01",
+      characters: [
+        { id: 1, name: "Morty Smith", image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg" },
+        { id: 2, name: "Summer Smith", image: "https://rickandmortyapi.com/api/character/avatar/2.jpeg" },
+      ],
+    });
+
+    await app.close();
+  });
+
+  it("handles a single character id (upstream returns an object, not an array)", async () => {
+    upstreamServer.use(
+      http.get(`${UPSTREAM_URL}/episode/1`, () =>
+        HttpResponse.json({ ...episodeDetailResponse(), characters: ["https://rickandmortyapi.com/api/character/1"] }),
+      ),
+      http.get(`${UPSTREAM_URL}/character/1`, () => HttpResponse.json(character(1, "Rick Sanchez"))),
+    );
+    const app = await buildServer(testEnv);
+
+    const response = await app.inject({ method: "GET", url: "/episodes/1" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().characters).toEqual([
+      { id: 1, name: "Rick Sanchez", image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg" },
+    ]);
+
+    await app.close();
+  });
+
+  it("returns 404 when the episode does not exist", async () => {
+    upstreamServer.use(
+      http.get(`${UPSTREAM_URL}/episode/999`, () =>
+        HttpResponse.json({ error: "Episode not found" }, { status: 404 }),
+      ),
+    );
+    const app = await buildServer(testEnv);
+
+    const response = await app.inject({ method: "GET", url: "/episodes/999" });
+
+    expect(response.statusCode).toBe(404);
+
+    await app.close();
+  });
+
+  it.each([
+    ["abc", "not a number"],
+    ["1.5", "not an integer"],
+    ["0", "below the minimum"],
+    ["-1", "negative"],
+  ])("rejects id=%s (%s) with 400", async (id) => {
+    const app = await buildServer(testEnv);
+
+    const response = await app.inject({ method: "GET", url: `/episodes/${id}` });
+
+    expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
+
+  it("returns 502 when the upstream API is unreachable while fetching the episode", async () => {
+    upstreamServer.use(http.get(`${UPSTREAM_URL}/episode/1`, () => HttpResponse.error()));
+    const app = await buildServer(testEnv);
+
+    const response = await app.inject({ method: "GET", url: "/episodes/1" });
+
+    expect(response.statusCode).toBe(502);
+
+    await app.close();
+  });
+
+  it("returns 502 when the upstream API is unreachable while fetching characters", async () => {
+    upstreamServer.use(
+      http.get(`${UPSTREAM_URL}/episode/1`, () => HttpResponse.json(episodeDetailResponse())),
+      http.get(`${UPSTREAM_URL}/character/1,2`, () => HttpResponse.error()),
+    );
+    const app = await buildServer(testEnv);
+
+    const response = await app.inject({ method: "GET", url: "/episodes/1" });
+
+    expect(response.statusCode).toBe(502);
+
+    await app.close();
+  });
+});

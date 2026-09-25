@@ -6,6 +6,11 @@ export interface ListEpisodesQuery {
   search?: string;
 }
 
+export interface EpisodeWithCharacterIds extends Episode {
+  characterIds: number[];
+}
+
 export interface EpisodeRepository {
   list(query: ListEpisodesQuery): Promise<PaginatedResult<Episode>>;
+  findById(id: number): Promise<EpisodeWithCharacterIds | null>;
 }
