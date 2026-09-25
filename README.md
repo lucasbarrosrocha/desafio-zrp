@@ -35,9 +35,14 @@ The episode list screen (`/`) is an async Server Component that fetches `GET /ep
 
 Flutter + [Riverpod](https://riverpod.dev/), with light layering mirroring the backend's Clean Architecture spirit:
 
-- `lib/domain` — entities and repository interfaces.
-- `lib/data` — repository implementations (HTTP client).
-- `lib/presentation` — screens, widgets, and Riverpod providers.
+- `lib/domain` — entities (`Episode`, `EpisodesPage`) and the `EpisodeRepository` port.
+- `lib/data` — `HttpEpisodeRepository`, the only layer that talks to the backend (via `package:http`).
+- `lib/presentation` — screens, widgets, and Riverpod providers. `presentation` never calls the HTTP client directly, only the `domain` repository interface.
+- `lib/core` — cross-cutting bits: `AppConfig` (backend base URL) and `BackendApiException`.
+
+The episode list screen (`EpisodeListScreen`, the app's home screen) fetches `GET /episodes` from the backend through `episodesPageProvider`, a `FutureProvider` that watches an `EpisodeListQueryNotifier` (search term + page, deliberately **not** `autoDispose`, so it survives a future detail screen being pushed on top). Search submits from a single text field (search icon / IME "search" action) and resets to page 1; pagination is two icon buttons showing "Page X of Y", hidden when there's only one page. Loading, empty (`No episodes found.`), and error (message + a manual **Retry** button) states are all handled explicitly — Riverpod 3's automatic provider retry-on-error is disabled app-wide in `main.dart` (`ProviderScope(retry: ...)`) precisely so that manual Retry stays the single, visible way failures get retried, instead of several silent background attempts delaying the error state.
+
+Requires `BACKEND_API_URL` (`--dart-define`), defaulting to `http://10.0.2.2:3001` — the Android emulator's alias for the host's `localhost` — see below.
 
 Testing: `flutter test` (widget/unit) and `integration_test` (drives the real app on a device/emulator).
 
@@ -47,6 +52,7 @@ Testing: `flutter test` (widget/unit) and `integration_test` (drives the real ap
 - **Character ordering** in an episode's detail view is alphabetical by name (the Rick and Morty API doesn't define an inherent order for a `characters` array) — a product assumption, open to revisiting.
 - **Upstream 404-as-empty-page**: the Rick and Morty API returns HTTP 404 for both "no results for this search" and "page out of range" (same body shape as a genuine not-found). The BFF's episode repository treats any 404 from the list endpoint as an empty page rather than an error, so `GET /episodes` with no matches is a normal `200` with `episodes: []`, not a client-facing error.
 - **State preservation on back-navigation**: on web, the episode list's search/page state lives in the URL (`?search=&page=`), so `Link`/back navigation naturally restores it. On the app, Flutter keeps the previous screen's `State` alive on the navigation stack by default, so the Riverpod provider backing the list isn't disposed when a detail screen is pushed on top.
+- **App: no silent auto-retry on failure**: Riverpod 3 retries a failing provider automatically (exponential backoff, several attempts) by default. The app's screens already surface failures with an explicit **Retry** button, so automatic retries are switched off globally (`ProviderScope(retry: (retryCount, error) => null)` in `app/lib/main.dart`) — otherwise a real failure would sit behind a loading spinner for several seconds of silent background retries before the error UI ever appeared.
 - **Gitflow, released per phase**: this project is built in small phases (see the git history / PR list), each branched from `develop`, tested (automated + a real "run it like a user would" pass), reviewed, merged into `develop`, and immediately promoted to `main` — so `main` is always a fully working snapshot of the latest completed phase, not just of periodic releases.
 
 ## API surface (BFF)
@@ -98,7 +104,13 @@ npm run dev              # http://localhost:3000
 ```bash
 cd app
 flutter pub get
-flutter run               # pick a connected device/emulator
+flutter run               # pick a connected device/emulator; start the backend first
+```
+
+Defaults to `BACKEND_API_URL=http://10.0.2.2:3001` (the Android emulator's `localhost` alias). Override for an iOS simulator, a physical device, or desktop:
+
+```bash
+flutter run --dart-define=BACKEND_API_URL=http://localhost:3001
 ```
 
 ## Testing
@@ -107,7 +119,7 @@ flutter run               # pick a connected device/emulator
 | ----------- | ----------------------------------- | ----------------------------------------------------------- |
 | `backend`   | `npm test` (Vitest, unit + integration) | Start `npm run dev`, hit endpoints with real HTTP requests against the live Rick and Morty API. |
 | `web`       | `npm test` (Vitest + Testing Library)   | `npm run build && npm run test:e2e` — Playwright's `webServer` boots both the real backend and the web app, so these tests exercise the full stack (web → backend → the live Rick and Morty API) in a real Chromium browser, not mocks. |
-| `app`       | `flutter test` (widget/unit)             | `flutter test integration_test` on a real emulator/device. |
+| `app`       | `flutter test` (widget/unit)             | Start the backend, then `flutter test integration_test --dart-define=BACKEND_API_URL=http://10.0.2.2:<port>` on a real Android emulator/device (adjust the URL for an iOS simulator/physical device). |
 
 ## Gitflow
 
