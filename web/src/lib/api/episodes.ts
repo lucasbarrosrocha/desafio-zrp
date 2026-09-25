@@ -1,5 +1,5 @@
 import "server-only";
-import type { EpisodesPage } from "@/lib/types/episode";
+import type { EpisodeDetail, EpisodesPage } from "@/lib/types/episode";
 
 const BACKEND_API_URL = process.env.BACKEND_API_URL || "http://localhost:3001";
 
@@ -44,4 +44,22 @@ export async function listEpisodes({ search, page }: ListEpisodesParams): Promis
   }
 
   return (await response.json()) as EpisodesPage;
+}
+
+export async function getEpisodeDetail(id: number): Promise<EpisodeDetail> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${BACKEND_API_URL}/episodes/${id}`, {
+      next: { revalidate: 3600 },
+    });
+  } catch (error) {
+    throw new BackendApiError("Failed to reach the backend API", undefined, { cause: error });
+  }
+
+  if (!response.ok) {
+    throw new BackendApiError(`Backend API responded with status ${response.status}`, response.status);
+  }
+
+  return (await response.json()) as EpisodeDetail;
 }

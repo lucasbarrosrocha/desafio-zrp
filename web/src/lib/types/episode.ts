@@ -13,3 +13,13 @@ export interface EpisodesPage {
   hasNext: boolean;
   hasPrevious: boolean;
 }
+
+export interface Character {
+  id: number;
+  name: string;
+  image: string;
+}
+
+export interface EpisodeDetail extends Episode {
+  characters: Character[];
+}
