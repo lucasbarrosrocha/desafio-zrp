@@ -1,7 +1,7 @@
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Character } from "@/lib/types/episode";
+import { CharacterModal } from "./character-modal";
 
 interface CharacterListItemProps {
   character: Character;
@@ -19,10 +19,7 @@ export function CharacterListItem({ character }: CharacterListItemProps) {
       />
       <CardContent className="flex flex-1 items-center justify-between gap-3 px-0">
         <span className="font-medium">{character.name}</span>
-        {/* Modal wiring lands in a later phase — the button is disabled until then. */}
-        <Button variant="outline" size="sm" disabled>
-          View details
-        </Button>
+        <CharacterModal characterId={character.id} characterName={character.name} />
       </CardContent>
     </Card>
   );

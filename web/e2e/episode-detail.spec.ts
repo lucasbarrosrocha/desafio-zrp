@@ -10,7 +10,7 @@ test.describe("episode detail", () => {
     await expect(page.getByRole("heading", { name: "Pilot" })).toBeVisible();
     await expect(page.getByText("S01E01")).toBeVisible();
     await expect(page.getByText("Rick Sanchez")).toBeVisible();
-    await expect(page.getByRole("button", { name: "View details" }).first()).toBeDisabled();
+    await expect(page.getByRole("button", { name: "View details" }).first()).toBeEnabled();
   });
 
   test("visiting a nonexistent episode shows the not-found page", async ({ page }) => {
