@@ -23,6 +23,8 @@ Fastify + TypeScript, no opinionated framework — the architecture is laid out 
 
 Tests: [Vitest](https://vitest.dev/), with upstream HTTP calls mocked via [msw](https://mswjs.io/) in integration tests. Endpoints proxying the Rick and Morty API are added phase by phase (see the API surface section below, which grows as they land).
 
+`GetEpisodeDetailUseCase` (behind `GET /episodes/:id`) orchestrates two separate repositories — `EpisodeRepository.findById` (episode fields + the character ids parsed out of the upstream character URLs) and `CharacterRepository.findByIds` (one batched upstream call for all of them) — and applies the alphabetical-by-name ordering itself, keeping that business rule out of both the HTTP and infrastructure layers.
+
 ### Web (`web/`)
 
 Next.js App Router, TypeScript, [shadcn/ui](https://ui.shadcn.com/) (Tailwind + Base UI, this project's flavor of shadcn — its `Button` composes via a `render` prop rather than Radix's `asChild`) as the design system — chosen for the best visual quality at the lowest development cost, and because it fits Server Components/Next's fetch caching cleanly. Testing: Vitest + React Testing Library (unit) and Playwright (real browser flows).
@@ -61,6 +63,7 @@ Testing: `flutter test` (widget/unit) and `integration_test` (drives the real ap
 | ------ | -------------------------- | ---------------------------------------------------------------------------- |
 | GET    | `/health`                  | Liveness check.                                                              |
 | GET    | `/episodes?search=&page=`  | Paginated episode list, optionally filtered by name. `page` defaults to 1.  |
+| GET    | `/episodes/:id`            | Episode detail, with its characters resolved and sorted alphabetically by name. |
 
 `GET /episodes` response shape:
 
@@ -77,7 +80,23 @@ Testing: `flutter test` (widget/unit) and `integration_test` (drives the real ap
 
 A search/page combination with no matches returns `200` with an empty `episodes` array (the upstream API's own 404-for-empty-results is translated into a normal empty page, not an error). An unreachable or failing upstream API returns `502`; an invalid `page` returns `400`.
 
-_(Grows as character endpoints are added in later phases.)_
+`GET /episodes/:id` response shape:
+
+```json
+{
+  "id": 1,
+  "name": "Pilot",
+  "airDate": "December 2, 2013",
+  "episodeCode": "S01E01",
+  "characters": [
+    { "id": 1, "name": "Rick Sanchez", "image": "https://rickandmortyapi.com/api/character/avatar/1.jpeg" }
+  ]
+}
+```
+
+`characters` is resolved with a single batched upstream call (`GET /character/1,2,...`, built from the episode's character ids) and sorted alphabetically by name — a business rule that lives in `GetEpisodeDetailUseCase`, not in the HTTP or infrastructure layers. A nonexistent episode returns `404`; an invalid (non-numeric or non-positive) `id` returns `400`; an unreachable/failing upstream API (while fetching either the episode or its characters) returns `502`.
+
+_(Grows as the character detail endpoint is added in a later phase.)_
 
 ## Running everything locally
 
