@@ -1,9 +1,11 @@
 import type { FastifyInstance } from "fastify";
+import type { GetEpisodeDetailUseCase } from "../../../application/use-cases/get-episode-detail.use-case.js";
 import type { ListEpisodesUseCase } from "../../../application/use-cases/list-episodes.use-case.js";
 import { UpstreamUnavailableError } from "../../../domain/errors/upstream-unavailable-error.js";
 
 interface EpisodesRouteOptions {
   listEpisodes: ListEpisodesUseCase;
+  getEpisodeDetail: GetEpisodeDetailUseCase;
 }
 
 interface ListEpisodesQuerystring {
@@ -19,6 +21,10 @@ const querystringSchema = {
   },
   additionalProperties: false,
 } as const;
+
+interface EpisodeDetailParams {
+  id: string;
+}
 
 export async function episodesRoute(app: FastifyInstance, opts: EpisodesRouteOptions): Promise<void> {
   app.get<{ Querystring: ListEpisodesQuerystring }>(
@@ -57,4 +63,32 @@ export async function episodesRoute(app: FastifyInstance, opts: EpisodesRouteOpt
       }
     },
   );
+
+  app.get<{ Params: EpisodeDetailParams }>("/episodes/:id", async (request, reply) => {
+    const id = Number(request.params.id);
+    if (!Number.isSafeInteger(id) || id < 1) {
+      return reply.status(400).send({ error: "id must be a positive integer" });
+    }
+
+    try {
+      const episode = await opts.getEpisodeDetail.execute(id);
+
+      if (!episode) {
+        return reply.status(404).send({ error: "Episode not found" });
+      }
+
+      return {
+        id: episode.id,
+        name: episode.name,
+        airDate: episode.airDate,
+        episodeCode: episode.episodeCode,
+        characters: episode.characters,
+      };
+    } catch (error) {
+      if (error instanceof UpstreamUnavailableError) {
+        return reply.status(502).send({ error: "Failed to reach the Rick and Morty API" });
+      }
+      throw error;
+    }
+  });
 }
