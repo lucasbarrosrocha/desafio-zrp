@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/character_summary.dart';
+import 'character_avatar.dart';
+import 'character_detail_bottom_sheet.dart';
 
 class CharacterListItem extends StatelessWidget {
   const CharacterListItem({required this.character, super.key});
@@ -11,15 +13,16 @@ class CharacterListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        leading: CircleAvatar(
-        backgroundImage: NetworkImage(character.image),
-        // Falls back to the plain avatar background instead of crashing/
-        // logging noisily if the image fails to load.
-        onBackgroundImageError: (_, _) {},
-      ),
+        leading: CharacterAvatar(imageUrl: character.image, diameter: 40),
         title: Text(character.name),
-        // Modal wiring lands in a later phase — the button is disabled until then.
-        trailing: const OutlinedButton(onPressed: null, child: Text('View details')),
+        trailing: OutlinedButton(
+          onPressed: () => showCharacterDetailBottomSheet(
+            context,
+            characterId: character.id,
+            characterName: character.name,
+          ),
+          child: const Text('View details'),
+        ),
       ),
     );
   }
