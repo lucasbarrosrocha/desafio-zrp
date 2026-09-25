@@ -32,7 +32,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       ) : (
         <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
           {result.episodes.map((episode) => (
-            <EpisodeCard key={episode.id} episode={episode} />
+            <EpisodeCard key={episode.id} episode={episode} search={search} page={result.page} />
           ))}
         </div>
       )}

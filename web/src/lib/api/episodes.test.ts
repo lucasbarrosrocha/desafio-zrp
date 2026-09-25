@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BackendApiError, listEpisodes } from "./episodes";
+import { BackendApiError, getEpisodeDetail, listEpisodes } from "./episodes";
 
 describe("listEpisodes", () => {
   beforeEach(() => {
@@ -56,5 +56,49 @@ describe("listEpisodes", () => {
     fetchMock.mockRejectedValue(new TypeError("fetch failed"));
 
     await expect(listEpisodes({})).rejects.toThrow(BackendApiError);
+  });
+});
+
+describe("getEpisodeDetail", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("requests the episode by id and returns the parsed body", async () => {
+    const fetchMock = vi.mocked(fetch);
+    const body = {
+      id: 1,
+      name: "Pilot",
+      airDate: "December 2, 2013",
+      episodeCode: "S01E01",
+      characters: [{ id: 1, name: "Rick Sanchez", image: "https://example.com/rick.jpeg" }],
+    };
+    fetchMock.mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }));
+
+    const result = await getEpisodeDetail(1);
+
+    expect(fetchMock).toHaveBeenCalledWith("http://localhost:3001/episodes/1", expect.anything());
+    expect(result).toEqual(body);
+  });
+
+  it("throws BackendApiError with the status when the backend responds 404", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue(new Response("", { status: 404 }));
+
+    const error = await getEpisodeDetail(999).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(BackendApiError);
+    expect((error as BackendApiError).status).toBe(404);
+  });
+
+  it("throws BackendApiError when the backend is unreachable", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockRejectedValue(new TypeError("fetch failed"));
+
+    await expect(getEpisodeDetail(1)).rejects.toThrow(BackendApiError);
   });
 });
