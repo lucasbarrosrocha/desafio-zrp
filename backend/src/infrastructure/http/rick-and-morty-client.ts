@@ -32,6 +32,10 @@ export class FetchRickAndMortyClient implements RickAndMortyClient {
       throw new UpstreamUnavailableError(`Rick and Morty API responded with status ${response.status}`);
     }
 
-    return (await response.json()) as T;
+    try {
+      return (await response.json()) as T;
+    } catch (error) {
+      throw new UpstreamUnavailableError("Rick and Morty API returned a malformed response", { cause: error });
+    }
   }
 }

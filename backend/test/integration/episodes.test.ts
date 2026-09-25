@@ -101,29 +101,61 @@ describe("GET /episodes", () => {
     await app.close();
   });
 
-  it("rejects a non-numeric page with 400", async () => {
+  it.each([
+    ["abc", "not a number"],
+    ["1.5", "not an integer"],
+    ["0", "below the minimum"],
+    ["-1", "negative"],
+    ["-0", "negative zero"],
+    ["Infinity", "not finite"],
+    ["1e21", "not a safe integer"],
+  ])("rejects page=%s (%s) with 400", async (page) => {
     const app = await buildServer(testEnv);
 
-    const response = await app.inject({ method: "GET", url: "/episodes?page=abc" });
+    const response = await app.inject({ method: "GET", url: `/episodes?page=${page}` });
 
     expect(response.statusCode).toBe(400);
 
     await app.close();
   });
 
-  it("rejects a page below 1 with 400", async () => {
+  it("rejects a repeated query parameter with 400", async () => {
     const app = await buildServer(testEnv);
 
-    const response = await app.inject({ method: "GET", url: "/episodes?page=0" });
+    const response = await app.inject({ method: "GET", url: "/episodes?search=a&search=b" });
 
     expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
+
+  it("returns 502 when the upstream API responds with a server error", async () => {
+    upstreamServer.use(
+      http.get(`${UPSTREAM_URL}/episode`, () => HttpResponse.json({}, { status: 500 })),
+    );
+    const app = await buildServer(testEnv);
+
+    const response = await app.inject({ method: "GET", url: "/episodes" });
+
+    expect(response.statusCode).toBe(502);
 
     await app.close();
   });
 
   it("returns 502 when the upstream API is unreachable", async () => {
+    upstreamServer.use(http.get(`${UPSTREAM_URL}/episode`, () => HttpResponse.error()));
+    const app = await buildServer(testEnv);
+
+    const response = await app.inject({ method: "GET", url: "/episodes" });
+
+    expect(response.statusCode).toBe(502);
+
+    await app.close();
+  });
+
+  it("returns 502 when the upstream API returns a malformed body", async () => {
     upstreamServer.use(
-      http.get(`${UPSTREAM_URL}/episode`, () => HttpResponse.json({}, { status: 500 })),
+      http.get(`${UPSTREAM_URL}/episode`, () => new HttpResponse("not json {{{", { status: 200 })),
     );
     const app = await buildServer(testEnv);
 

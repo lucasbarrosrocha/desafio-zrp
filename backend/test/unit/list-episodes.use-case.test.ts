@@ -24,7 +24,9 @@ describe("ListEpisodesUseCase", () => {
 
     await useCase.execute({ search: "   ", page: 2 });
 
-    expect(list).toHaveBeenCalledWith({ search: undefined, page: 2 });
+    const calledWith = list.mock.calls[0]?.[0];
+    expect(calledWith).toEqual({ page: 2 });
+    expect(Object.hasOwn(calledWith, "search")).toBe(false);
   });
 
   it("omits search entirely when none was provided", async () => {
@@ -33,7 +35,9 @@ describe("ListEpisodesUseCase", () => {
 
     await useCase.execute({ page: 1 });
 
-    expect(list).toHaveBeenCalledWith({ search: undefined, page: 1 });
+    const calledWith = list.mock.calls[0]?.[0];
+    expect(calledWith).toEqual({ page: 1 });
+    expect(Object.hasOwn(calledWith, "search")).toBe(false);
   });
 
   it("returns whatever the repository resolves", async () => {

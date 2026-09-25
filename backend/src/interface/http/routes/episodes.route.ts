@@ -11,37 +11,50 @@ interface ListEpisodesQuerystring {
   page?: string;
 }
 
+const querystringSchema = {
+  type: "object",
+  properties: {
+    search: { type: "string" },
+    page: { type: "string" },
+  },
+  additionalProperties: false,
+} as const;
+
 export async function episodesRoute(app: FastifyInstance, opts: EpisodesRouteOptions): Promise<void> {
-  app.get<{ Querystring: ListEpisodesQuerystring }>("/episodes", async (request, reply) => {
-    const { search, page: rawPage } = request.query;
+  app.get<{ Querystring: ListEpisodesQuerystring }>(
+    "/episodes",
+    { schema: { querystring: querystringSchema } },
+    async (request, reply) => {
+      const { search, page: rawPage } = request.query;
 
-    let page = 1;
-    if (rawPage !== undefined) {
-      page = Number(rawPage);
-      if (!Number.isInteger(page) || page < 1) {
-        return reply.status(400).send({ error: "page must be a positive integer" });
+      let page = 1;
+      if (rawPage !== undefined) {
+        page = Number(rawPage);
+        if (!Number.isSafeInteger(page) || page < 1) {
+          return reply.status(400).send({ error: "page must be a positive integer" });
+        }
       }
-    }
 
-    try {
-      const result = await opts.listEpisodes.execute({
-        page,
-        ...(search !== undefined ? { search } : {}),
-      });
+      try {
+        const result = await opts.listEpisodes.execute({
+          page,
+          ...(search !== undefined ? { search } : {}),
+        });
 
-      return {
-        episodes: result.items,
-        page: result.page,
-        totalPages: result.totalPages,
-        totalCount: result.totalCount,
-        hasNext: result.hasNext,
-        hasPrevious: result.hasPrevious,
-      };
-    } catch (error) {
-      if (error instanceof UpstreamUnavailableError) {
-        return reply.status(502).send({ error: "Failed to reach the Rick and Morty API" });
+        return {
+          episodes: result.items,
+          page: result.page,
+          totalPages: result.totalPages,
+          totalCount: result.totalCount,
+          hasNext: result.hasNext,
+          hasPrevious: result.hasPrevious,
+        };
+      } catch (error) {
+        if (error instanceof UpstreamUnavailableError) {
+          return reply.status(502).send({ error: "Failed to reach the Rick and Morty API" });
+        }
+        throw error;
       }
-      throw error;
-    }
-  });
+    },
+  );
 }
