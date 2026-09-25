@@ -43,4 +43,33 @@ void main() {
 
     expect(find.textContaining('Page 1 of'), findsOneWidget);
   });
+
+  testWidgets('opens an episode and back preserves the list state, against the real backend', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: DesafioZrpApp()));
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'Pilot');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    final pilotCard = find.descendant(of: find.byType(ListView), matching: find.text('Pilot'));
+    expect(pilotCard, findsOneWidget);
+
+    await tester.tap(pilotCard);
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    expect(find.text('Episode'), findsOneWidget);
+    expect(find.text('S01E01 · Aired December 2, 2013'), findsOneWidget);
+    // First character alphabetically, so it renders without scrolling the list.
+    expect(find.text('Bepisian'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'View details'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    expect(find.text('Episode'), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller?.text, 'Pilot');
+    expect(pilotCard, findsOneWidget);
+  });
 }

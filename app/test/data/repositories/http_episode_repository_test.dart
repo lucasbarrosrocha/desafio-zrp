@@ -78,5 +78,48 @@ void main() {
 
       await expectLater(repository.listEpisodes(page: 1), throwsA(isA<BackendApiException>()));
     });
+
+    test('parses a successful response into an EpisodeDetail with its characters', () async {
+      final client = MockClient((request) async {
+        expect(request.url.path, '/episodes/1');
+
+        return http.Response(
+          jsonEncode({
+            'id': 1,
+            'name': 'Pilot',
+            'airDate': 'December 2, 2013',
+            'episodeCode': 'S01E01',
+            'characters': [
+              {'id': 1, 'name': 'Rick Sanchez', 'image': 'https://rickandmortyapi.com/api/character/avatar/1.jpeg'},
+            ],
+          }),
+          200,
+        );
+      });
+
+      final repository = HttpEpisodeRepository(client: client, baseUrl: 'http://backend.test');
+      final result = await repository.getEpisodeDetail(1);
+
+      expect(result.name, 'Pilot');
+      expect(result.characters, hasLength(1));
+      expect(result.characters.single.name, 'Rick Sanchez');
+    });
+
+    test('throws a BackendApiException with the status on a 404', () async {
+      final client = MockClient((request) async => http.Response('{"error":"Episode not found"}', 404));
+      final repository = HttpEpisodeRepository(client: client, baseUrl: 'http://backend.test');
+
+      await expectLater(
+        repository.getEpisodeDetail(999),
+        throwsA(isA<BackendApiException>().having((e) => e.statusCode, 'statusCode', 404)),
+      );
+    });
+
+    test('throws a BackendApiException when the detail request fails', () async {
+      final client = MockClient((request) async => throw Exception('network down'));
+      final repository = HttpEpisodeRepository(client: client, baseUrl: 'http://backend.test');
+
+      await expectLater(repository.getEpisodeDetail(1), throwsA(isA<BackendApiException>()));
+    });
   });
 }

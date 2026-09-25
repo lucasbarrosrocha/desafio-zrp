@@ -1,4 +1,5 @@
 import 'package:app/domain/entities/episode.dart';
+import 'package:app/domain/entities/episode_detail.dart';
 import 'package:app/domain/entities/episodes_page.dart';
 import 'package:app/domain/repositories/episode_repository.dart';
 import 'package:app/presentation/episodes/episode_list_screen.dart';
@@ -8,10 +9,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeEpisodeRepository implements EpisodeRepository {
-  _FakeEpisodeRepository(this._pages);
+  _FakeEpisodeRepository(this._pages, [this._details = const {}]);
 
   final Map<String, EpisodesPage> _pages;
+  final Map<int, EpisodeDetail> _details;
   final List<({String? search, int page})> calls = [];
+  final List<int> detailCalls = [];
   Object? errorToThrow;
 
   static String _key(String? search, int page) => '${search ?? ''}|$page';
@@ -26,6 +29,16 @@ class _FakeEpisodeRepository implements EpisodeRepository {
     }
     return _pages[_key(search, page)] ??
         EpisodesPage(episodes: const [], page: page, totalPages: 0, totalCount: 0, hasNext: false, hasPrevious: false);
+  }
+
+  @override
+  Future<EpisodeDetail> getEpisodeDetail(int id) async {
+    detailCalls.add(id);
+    final detail = _details[id];
+    if (detail == null) {
+      throw StateError('No fake detail registered for episode $id');
+    }
+    return detail;
   }
 }
 
@@ -168,5 +181,53 @@ void main() {
 
     expect(find.text('Pilot'), findsOneWidget);
     expect(find.text('Page 1 of 2'), findsOneWidget);
+  });
+
+  testWidgets('opening an episode and going back preserves the list state without refetching', (tester) async {
+    final repository = _FakeEpisodeRepository(
+      {
+        'Rick|1': EpisodesPage(
+          episodes: [_episode(2, 'Rickmancing the Stone')],
+          page: 1,
+          totalPages: 1,
+          totalCount: 1,
+          hasNext: false,
+          hasPrevious: false,
+        ),
+      },
+      {
+        2: const EpisodeDetail(
+          id: 2,
+          name: 'Rickmancing the Stone',
+          airDate: 'July 30, 2017',
+          episodeCode: 'S03E01',
+          characters: [],
+        ),
+      },
+    );
+
+    await tester.pumpWidget(_wrap(repository));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Rick');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rickmancing the Stone'), findsOneWidget);
+    final callsBeforeNavigation = repository.calls.length;
+
+    await tester.tap(find.text('Rickmancing the Stone'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Episode'), findsOneWidget);
+    expect(repository.detailCalls, [2]);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Episode'), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller?.text, 'Rick');
+    expect(find.text('Rickmancing the Stone'), findsOneWidget);
+    expect(repository.calls.length, callsBeforeNavigation);
   });
 }
