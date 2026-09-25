@@ -10,17 +10,22 @@ describe("listEpisodes", () => {
     vi.unstubAllGlobals();
   });
 
-  it("requests the backend with no query params when none are given", async () => {
+  it("requests the backend with no query params when none are given, and returns the parsed body", async () => {
     const fetchMock = vi.mocked(fetch);
-    fetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ episodes: [], page: 1, totalPages: 0, totalCount: 0, hasNext: false, hasPrevious: false }), {
-        status: 200,
-      }),
-    );
+    const body = {
+      episodes: [{ id: 1, name: "Pilot", airDate: "December 2, 2013", episodeCode: "S01E01" }],
+      page: 1,
+      totalPages: 1,
+      totalCount: 1,
+      hasNext: false,
+      hasPrevious: false,
+    };
+    fetchMock.mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }));
 
-    await listEpisodes({});
+    const result = await listEpisodes({});
 
     expect(fetchMock).toHaveBeenCalledWith("http://localhost:3001/episodes", expect.anything());
+    expect(result).toEqual(body);
   });
 
   it("forwards search and page as query params", async () => {

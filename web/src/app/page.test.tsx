@@ -100,4 +100,12 @@ describe("Home page", () => {
     expect(screen.getByRole("navigation", { name: "Pagination" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/?page=2");
   });
+
+  it("propagates a listEpisodes failure instead of swallowing it", async () => {
+    listEpisodes.mockRejectedValue(new Error("backend unreachable"));
+
+    await expect(
+      Home({ params: Promise.resolve({}), searchParams: Promise.resolve({}) }),
+    ).rejects.toThrow("backend unreachable");
+  });
 });
