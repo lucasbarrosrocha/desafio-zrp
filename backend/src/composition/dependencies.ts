@@ -1,3 +1,4 @@
+import { GetCharacterDetailUseCase } from "../application/use-cases/get-character-detail.use-case.js";
 import { GetEpisodeDetailUseCase } from "../application/use-cases/get-episode-detail.use-case.js";
 import { ListEpisodesUseCase } from "../application/use-cases/list-episodes.use-case.js";
 import type { Env } from "../config/env.js";
@@ -8,6 +9,7 @@ import { RickAndMortyEpisodeRepository } from "../infrastructure/http/rick-and-m
 export interface Dependencies {
   listEpisodes: ListEpisodesUseCase;
   getEpisodeDetail: GetEpisodeDetailUseCase;
+  getCharacterDetail: GetCharacterDetailUseCase;
 }
 
 export function buildDependencies(env: Env): Dependencies {
@@ -18,5 +20,6 @@ export function buildDependencies(env: Env): Dependencies {
   return {
     listEpisodes: new ListEpisodesUseCase(episodeRepository),
     getEpisodeDetail: new GetEpisodeDetailUseCase(episodeRepository, characterRepository),
+    getCharacterDetail: new GetCharacterDetailUseCase(characterRepository),
   };
 }

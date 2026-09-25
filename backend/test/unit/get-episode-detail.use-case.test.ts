@@ -25,7 +25,7 @@ describe("GetEpisodeDetailUseCase", () => {
     const findByIds = vi.fn();
     const useCase = new GetEpisodeDetailUseCase(
       { findById, list: vi.fn() } satisfies EpisodeRepository,
-      { findByIds } satisfies CharacterRepository,
+      { findByIds, findById: vi.fn() } satisfies CharacterRepository,
     );
 
     const result = await useCase.execute(999);
@@ -39,7 +39,7 @@ describe("GetEpisodeDetailUseCase", () => {
     const findByIds = vi.fn().mockResolvedValue([]);
     const useCase = new GetEpisodeDetailUseCase(
       { findById, list: vi.fn() } satisfies EpisodeRepository,
-      { findByIds } satisfies CharacterRepository,
+      { findByIds, findById: vi.fn() } satisfies CharacterRepository,
     );
 
     await useCase.execute(1);
@@ -54,7 +54,7 @@ describe("GetEpisodeDetailUseCase", () => {
       .mockResolvedValue([character({ id: 2, name: "Summer Smith" }), character({ id: 1, name: "Morty Smith" })]);
     const useCase = new GetEpisodeDetailUseCase(
       { findById, list: vi.fn() } satisfies EpisodeRepository,
-      { findByIds } satisfies CharacterRepository,
+      { findByIds, findById: vi.fn() } satisfies CharacterRepository,
     );
 
     const result = await useCase.execute(1);
@@ -67,7 +67,7 @@ describe("GetEpisodeDetailUseCase", () => {
     const findByIds = vi.fn().mockResolvedValue([character({ id: 1, name: "Rick Sanchez" })]);
     const useCase = new GetEpisodeDetailUseCase(
       { findById, list: vi.fn() } satisfies EpisodeRepository,
-      { findByIds } satisfies CharacterRepository,
+      { findByIds, findById: vi.fn() } satisfies CharacterRepository,
     );
 
     const result = await useCase.execute(3);

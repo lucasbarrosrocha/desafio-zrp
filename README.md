@@ -69,6 +69,7 @@ Testing: `flutter test` (widget/unit) and `integration_test` (drives the real ap
 | GET    | `/health`                  | Liveness check.                                                              |
 | GET    | `/episodes?search=&page=`  | Paginated episode list, optionally filtered by name. `page` defaults to 1.  |
 | GET    | `/episodes/:id`            | Episode detail, with its characters resolved and sorted alphabetically by name. |
+| GET    | `/characters/:id`          | Character detail. |
 
 `GET /episodes` response shape:
 
@@ -101,7 +102,23 @@ A search/page combination with no matches returns `200` with an empty `episodes`
 
 `characters` is resolved with a single batched upstream call (`GET /character/1,2,...`, built from the episode's character ids) and sorted alphabetically by name — a business rule that lives in `GetEpisodeDetailUseCase`, not in the HTTP or infrastructure layers. A nonexistent episode returns `404`; an invalid (non-numeric or non-positive) `id` returns `400`; an unreachable/failing upstream API (while fetching either the episode or its characters) returns `502`.
 
-_(Grows as the character detail endpoint is added in a later phase.)_
+`GET /characters/:id` response shape:
+
+```json
+{
+  "id": 1,
+  "name": "Rick Sanchez",
+  "status": "Alive",
+  "species": "Human",
+  "type": "",
+  "gender": "Male",
+  "origin": "Earth (C-137)",
+  "location": "Citadel of Ricks",
+  "image": "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
+}
+```
+
+`origin`/`location` are flattened to just their name (the upstream API's nested `{ name, url }` objects aren't otherwise used, so the infrastructure layer doesn't leak them past its boundary). Same error handling as the other detail endpoint: `404` for a nonexistent character, `400` for an invalid id, `502` for an unreachable/failing upstream API.
 
 ## Running everything locally
 
