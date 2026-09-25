@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("character modal", () => {
   test("opening a character shows its detail, then closes", async ({ page }) => {
