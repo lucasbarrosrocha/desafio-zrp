@@ -78,7 +78,7 @@ void main() {
     expect(find.text('Rick Sanchez'), findsOneWidget);
   });
 
-  testWidgets('disables the View details button per character (no modal yet)', (tester) async {
+  testWidgets('renders an enabled View details button per character', (tester) async {
     final repository = _FakeEpisodeRepository({
       1: _episodeDetail(
         characters: const [
@@ -90,8 +90,10 @@ void main() {
     await tester.pumpWidget(_wrap(repository));
     await tester.pumpAndSettle();
 
+    // The bottom sheet's own behavior (loading/data/not-found/error/close)
+    // is covered by character_detail_bottom_sheet_test.dart.
     final button = tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'View details'));
-    expect(button.onPressed, isNull);
+    expect(button.onPressed, isNotNull);
   });
 
   testWidgets('shows an empty state when the episode has no characters', (tester) async {

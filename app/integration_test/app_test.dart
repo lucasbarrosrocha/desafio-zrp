@@ -72,4 +72,32 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).controller?.text, 'Pilot');
     expect(pilotCard, findsOneWidget);
   });
+
+  testWidgets('opens a character bottom sheet showing its detail, against the real backend', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: DesafioZrpApp()));
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'Pilot');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    await tester.tap(find.descendant(of: find.byType(ListView), matching: find.text('Pilot')));
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    // First character alphabetically, so it renders without scrolling the list.
+    await tester.tap(find.widgetWithText(OutlinedButton, 'View details').first);
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    expect(find.text('Bepisian'), findsWidgets);
+    expect(find.text('Status'), findsOneWidget);
+    expect(find.text('Species'), findsOneWidget);
+    expect(find.text('Alien'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    expect(find.text('Status'), findsNothing);
+    expect(find.text('S01E01 · Aired December 2, 2013'), findsOneWidget);
+  });
 }
