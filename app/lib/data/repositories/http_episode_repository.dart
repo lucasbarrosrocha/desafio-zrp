@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/errors/backend_api_exception.dart';
+import '../../domain/entities/episode_detail.dart';
 import '../../domain/entities/episodes_page.dart';
 import '../../domain/repositories/episode_repository.dart';
 
@@ -36,5 +37,26 @@ class HttpEpisodeRepository implements EpisodeRepository {
     }
 
     return EpisodesPage.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  @override
+  Future<EpisodeDetail> getEpisodeDetail(int id) async {
+    final uri = Uri.parse('$_baseUrl/episodes/$id');
+
+    final http.Response response;
+    try {
+      response = await _client.get(uri);
+    } catch (error) {
+      throw BackendApiException('Failed to reach the backend API', cause: error);
+    }
+
+    if (response.statusCode != 200) {
+      throw BackendApiException(
+        'Backend API responded with status ${response.statusCode}',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return EpisodeDetail.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 }

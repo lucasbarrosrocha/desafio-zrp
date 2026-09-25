@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/config/app_config.dart';
 import '../../../data/repositories/http_episode_repository.dart';
+import '../../../domain/entities/episode_detail.dart';
 import '../../../domain/entities/episodes_page.dart';
 import '../../../domain/repositories/episode_repository.dart';
 
@@ -51,4 +52,13 @@ final episodesPageProvider = FutureProvider<EpisodesPage>((ref) {
     search: query.search.isEmpty ? null : query.search,
     page: query.page,
   );
+});
+
+/// `autoDispose`, unlike [episodeListQueryProvider]/[episodesPageProvider]:
+/// a detail screen's own data has no reason to stay cached once the user
+/// navigates away from it (the screen itself is popped off the stack, not
+/// kept alive underneath like the list screen is).
+final episodeDetailProvider = FutureProvider.autoDispose.family<EpisodeDetail, int>((ref, id) {
+  final repository = ref.watch(episodeRepositoryProvider);
+  return repository.getEpisodeDetail(id);
 });
