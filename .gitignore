@@ -1,7 +1,8 @@
-# Claude Code control files (never commit)
-CLAUDE.md
-.claude/
-PLAN.md
+# Claude Code control files (never commit) — root-only, not sub-project
+# generated files like web/CLAUDE.md (Next.js's own AGENTS.md pointer)
+/CLAUDE.md
+/.claude/
+/PLAN.md
 
 # Node
 node_modules/
@@ -15,6 +16,11 @@ coverage/
 .next/
 out/
 next-env.d.ts
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
 
 # Env
 .env
