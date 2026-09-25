@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'presentation/home/home_screen.dart';
+import 'presentation/episodes/episode_list_screen.dart';
 
 class DesafioZrpApp extends StatelessWidget {
   const DesafioZrpApp({super.key});
@@ -9,7 +9,7 @@ class DesafioZrpApp extends StatelessWidget {
     return MaterialApp(
       title: 'Desafio ZRP',
       theme: ThemeData(colorSchemeSeed: Colors.deepPurple, useMaterial3: true),
-      home: const HomeScreen(),
+      home: const EpisodeListScreen(),
     );
   }
 }
