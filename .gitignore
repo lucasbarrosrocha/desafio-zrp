@@ -1,0 +1,42 @@
+# Claude Code control files (never commit)
+CLAUDE.md
+.claude/
+PLAN.md
+
+# Node
+node_modules/
+npm-debug.log*
+.pnpm-debug.log*
+dist/
+build/
+coverage/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Flutter / Dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/build/
+app/android/local.properties
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/flutter_export_environment.sh
+*.iml
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
