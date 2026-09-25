@@ -39,12 +39,14 @@ The episode detail screen (`/episodes/[id]`) is likewise an async Server Compone
 
 Flutter + [Riverpod](https://riverpod.dev/), with light layering mirroring the backend's Clean Architecture spirit:
 
-- `lib/domain` — entities (`Episode`, `EpisodesPage`) and the `EpisodeRepository` port.
+- `lib/domain` — entities (`Episode`, `EpisodesPage`, `EpisodeDetail`, `CharacterSummary`) and the `EpisodeRepository` port.
 - `lib/data` — `HttpEpisodeRepository`, the only layer that talks to the backend (via `package:http`).
 - `lib/presentation` — screens, widgets, and Riverpod providers. `presentation` never calls the HTTP client directly, only the `domain` repository interface.
 - `lib/core` — cross-cutting bits: `AppConfig` (backend base URL) and `BackendApiException`.
 
 The episode list screen (`EpisodeListScreen`, the app's home screen) fetches `GET /episodes` from the backend through `episodesPageProvider`, a `FutureProvider` that watches an `EpisodeListQueryNotifier` (search term + page, deliberately **not** `autoDispose`, so it survives a future detail screen being pushed on top). Search submits from a single text field (search icon / IME "search" action) and resets to page 1; pagination is two icon buttons showing "Page X of Y", hidden when there's only one page. Loading, empty (`No episodes found.`), and error (message + a manual **Retry** button) states are all handled explicitly — Riverpod 3's automatic provider retry-on-error is disabled app-wide in `main.dart` (`ProviderScope(retry: ...)`) precisely so that manual Retry stays the single, visible way failures get retried, instead of several silent background attempts delaying the error state.
+
+Tapping an episode card pushes `EpisodeDetailScreen` (`Navigator.push`), which fetches `GET /episodes/:id` through `episodeDetailProvider`, a `FutureProvider.family<EpisodeDetail, int>` — this one **is** `autoDispose`, unlike the list's own providers, since a detail screen's data has no reason to stay cached once it's popped off the stack. The screen renders the episode's fields plus its characters (avatar, name, a disabled **View details** button — the modal itself lands in a later phase), with its own loading/error/not-found (404) states. Back navigation is the platform's default `AppBar` back button; no extra code preserves the list's search/page, because Flutter never disposes the list screen's `State` (and therefore never disposes its providers) while the detail screen sits on top of it on the navigation stack.
 
 Requires `BACKEND_API_URL` (`--dart-define`), defaulting to `http://10.0.2.2:3001` — the Android emulator's alias for the host's `localhost` — see below.
 
