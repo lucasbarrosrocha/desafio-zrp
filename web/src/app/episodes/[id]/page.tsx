@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CharacterListItem } from "@/components/episodes/character-list-item";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { BackendApiError, getEpisodeDetail } from "@/lib/api/episodes";
 import { buildEpisodeListHref } from "@/lib/urls";
 
@@ -34,9 +34,9 @@ export default async function EpisodeDetailPage({ params, searchParams }: PagePr
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-8 px-6 py-16">
-      <Button variant="outline" render={<Link href={backHref} />} className="self-start">
+      <Link href={backHref} className={buttonVariants({ variant: "outline", className: "self-start" })}>
         ← Back to episodes
-      </Button>
+      </Link>
 
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">{episode.name}</h1>

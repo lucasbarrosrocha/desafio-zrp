@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("episode detail", () => {
   test("opening an episode shows its data and characters", async ({ page }) => {

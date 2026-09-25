@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 interface PaginationControlsProps {
   page: number;
@@ -27,9 +27,9 @@ export function PaginationControls({ page, totalPages, search }: PaginationContr
   return (
     <nav aria-label="Pagination" className="flex items-center justify-center gap-4">
       {hasPrevious ? (
-        <Button variant="outline" render={<Link href={buildHref(page - 1, search)} />}>
+        <Link href={buildHref(page - 1, search)} className={buttonVariants({ variant: "outline" })}>
           Previous
-        </Button>
+        </Link>
       ) : (
         <Button variant="outline" disabled>
           Previous
@@ -39,9 +39,9 @@ export function PaginationControls({ page, totalPages, search }: PaginationContr
         Page {page} of {totalPages}
       </span>
       {hasNext ? (
-        <Button variant="outline" render={<Link href={buildHref(page + 1, search)} />}>
+        <Link href={buildHref(page + 1, search)} className={buttonVariants({ variant: "outline" })}>
           Next
-        </Button>
+        </Link>
       ) : (
         <Button variant="outline" disabled>
           Next
